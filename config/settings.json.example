@@ -1,0 +1,46 @@
+{
+  "script_provider": "openai",
+  "voice_provider": "elevenlabs",
+  "general": {
+    "timeout": 30,
+    "max_retries": 3
+  },
+  "providers": {
+    "openai": {
+      "provider_type": "openai",
+      "model_name": "gpt-4",
+      "timeout": 60,
+      "max_retries": 3,
+      "extra_params": {
+        "temperature": 0.7,
+        "max_tokens": 2000
+      }
+    },
+    "elevenlabs": {
+      "provider_type": "elevenlabs",
+      "model_name": "eleven_multilingual_v2",
+      "timeout": 30,
+      "max_retries": 3,
+      "extra_params": {
+        "stability": 0.5,
+        "similarity_boost": 0.75
+      }
+    }
+  },
+  "voices": {
+    "elevenlabs": [
+      {
+        "voice_id": "21m00Tcm4TlvDq8ikWAM",
+        "name": "Rachel",
+        "language": "en",
+        "gender": "female"
+      },
+      {
+        "voice_id": "AZnzlk1XvdvUBZ4xS1Zj",
+        "name": "Domi",
+        "language": "en",
+        "gender": "female"
+      }
+    ]
+  }
+}

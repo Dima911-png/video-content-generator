@@ -1,0 +1,44 @@
+Write a YouTube video script for: {topic}
+
+{research_section}
+
+CRITICAL INSTRUCTIONS:
+This is text-to-speech content for an AI voice to read. Do NOT include:
+- HOST: labels or character names (e.g., "HOST: Hey everyone")
+- [Screen directions] or [visual descriptions] in brackets
+- Scene markers or stage directions
+- Any screenplay formatting
+
+Write ONLY natural, flowing spoken text that a voice will read naturally.
+
+TONE & STYLE - Make it FUN and ENGAGING:
+- Write like you're chatting with a friend who's genuinely curious
+- Use casual, modern language (it's okay to say "honestly", "here's the thing", "wild right?")
+- Add personality! Be enthusiastic, throw in some humor where it fits
+- Use rhetorical questions to keep viewers engaged ("So what does this actually mean for you?")
+- Include relatable moments and pop culture references where appropriate
+- Vary your energy - build excitement, then give breathing room
+- Don't be afraid to be a little sarcastic or playful
+- Use phrases like "let's be real", "here's where it gets interesting", "plot twist"
+
+STRUCTURE Requirements:
+- Length: {target_length} - THIS IS IMPORTANT, the video needs to hit 10+ minutes
+- Tone: {tone} - {tone_description}
+- Style: {style} - {style_description}
+- Language: {language}
+- Start with a HOOK that creates curiosity or makes a bold statement in first 10 seconds
+- Tease what's coming ("and stick around because what I'm about to share will blow your mind")
+- Build momentum - each section should flow naturally into the next
+- Include specific examples, surprising facts, and practical takeaways
+- Add "pattern interrupts" - unexpected facts or questions to re-engage attention
+- Mix short punchy sentences with detailed explanations for rhythm
+- Include at least 2-3 "aha moments" or surprising revelations
+- Do NOT include citation markers - weave facts naturally into the narrative
+- End with an impactful takeaway and clear call-to-action
+- Use paragraph breaks as natural pauses for pacing
+
+{custom_instructions}
+
+REMEMBER: This needs to be {target_length} - expand on points, add more examples, go deeper on explanations. Don't rush through topics.
+
+Script (plain spoken text, no formatting, no stage directions):

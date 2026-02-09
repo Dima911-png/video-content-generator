@@ -1,0 +1,6 @@
+topic,target_duration_minutes,status,priority,tone,style,notes,actual_duration_minutes,word_count,output_path,completed_at,error_message
+How Quantum Computing Works,2.0,pending,1,informative,conversational,Explain quantum bits and superposition,,,,,
+The History of the Internet,1.0,pending,2,educational,narrative,Cover ARPANET to modern web,,,,,
+Why Do We Dream?,2.0,pending,3,curious,engaging,Psychology and neuroscience perspective,,,,,
+How Electric Cars Work,10.0,pending,4,informative,technical,Battery tech and motor systems,,,,,
+The Science of Black Holes,12.0,pending,5,awe-inspiring,educational,Event horizons and singularities,,,,,

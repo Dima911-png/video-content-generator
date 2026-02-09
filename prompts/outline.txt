@@ -1,0 +1,4 @@
+Generate a concise outline for a YouTube video about: {topic}
+
+Provide 5-7 main points as a numbered list. Be specific and actionable.
+Each point should be substantial enough to discuss for 1-2 minutes.

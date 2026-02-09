@@ -1,0 +1,12 @@
+Take this YouTube video script and enhance it with SSML tags for better voice generation.
+Add tags for:
+- Natural pauses (<break time="0.5s"/>)
+- Emphasis on important words (<emphasis level="strong">word</emphasis>)
+- Speed variations for better pacing
+- Prosody adjustments where appropriate
+
+Keep the original text intact but wrap sections with SSML tags:
+
+{script}
+
+Return only the enhanced script with SSML tags, no explanations.

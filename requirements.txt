@@ -1,0 +1,23 @@
+# =============================================================================
+# YouTube Video Automation - Requirements
+# =============================================================================
+
+# Core
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+requests>=2.28.0
+
+# Web scraping & research
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
+
+# Image processing & search
+Pillow>=10.0.0
+icrawler>=0.6.6
+
+# Video assembly (optional - uses FFmpeg if not available)
+moviepy>=1.0.3
+
+# Type checking (development)
+# mypy>=1.0.0
+# types-requests>=2.28.0
