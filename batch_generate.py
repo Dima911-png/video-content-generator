@@ -142,7 +142,9 @@ async def process_topic(
             style=topic_entry.style,
             language=language,
             length=topic_entry.get_length_setting(),
-            target_duration_minutes=topic_entry.target_duration_minutes,
+            # Generate with a 20% buffer because model word counts and speaking pace vary;
+            # this helps the final narration meet the requested minimum duration.
+            target_duration_minutes=round(topic_entry.target_duration_minutes * 1.2, 2),
             include_ssml=True,
             generate_voice=not skip_voice,
             find_images=not skip_images,
