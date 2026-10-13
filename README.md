@@ -79,6 +79,12 @@ An AI-powered pipeline for automated YouTube video generation. This system resea
    PIXABAY_API_KEY=your-pixabay-key  # Optional
    ```
 
+## 🎙️ Russian TTS Studio (VoxCPM2)
+
+The video generator supports a Russian TTS Studio server as its primary voice engine. Set the GitHub Actions repository secret `RUSSIAN_TTS_STUDIO_URL` to the base URL of a running server, for example `https://your-tts-server.example.com`. The server must be reachable from GitHub Actions and expose `/api/synthesize` and `/api/audio/{filename}`.
+
+The generation workflow selects VoxCPM2 when that secret is set. The voice-preview workflow uses the same server, so you can listen to a short sample before generating a full video. VoxCPM2 runs on the TTS server, not on the GitHub Actions runner; it needs suitable compute, and CPU-only inference can be very slow. See the upstream [Russian TTS Studio repository](https://github.com/beligel/russian-tts-studio) for installation and server startup instructions.
+
 ## 🚀 Usage
 
 ### Single Video Generation
