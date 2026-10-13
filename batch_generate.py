@@ -107,6 +107,7 @@ async def process_topic(
     skip_voice: bool = False,
     skip_images: bool = False,
     skip_video: bool = False,
+    language: str = "ru",
 ) -> bool:
     """
     Process a single topic from the queue.
@@ -139,6 +140,7 @@ async def process_topic(
             topic=topic,
             tone=topic_entry.tone,
             style=topic_entry.style,
+            language=language,
             length=topic_entry.get_length_setting(),
             target_duration_minutes=topic_entry.target_duration_minutes,
             include_ssml=True,
@@ -193,6 +195,7 @@ async def main():
     parser.add_argument("--csv", default="topics.csv", help="Path to topics CSV file")
     parser.add_argument("--all", action="store_true", help="Process all pending topics")
     parser.add_argument("--topic", type=str, help="Process a specific topic by name")
+    parser.add_argument("--language", choices=["ru", "en"], default="ru", help="Script and narration language (default: Russian)")
     parser.add_argument("--create-template", action="store_true", help="Create example topics.csv")
     parser.add_argument("--status", action="store_true", help="Show queue status")
     parser.add_argument("--reset-failed", action="store_true", help="Reset failed topics to pending")
@@ -302,6 +305,7 @@ async def main():
                 skip_voice=args.skip_voice,
                 skip_images=args.skip_images,
                 skip_video=args.skip_video,
+                language=args.language,
             )
             if success:
                 successful += 1
