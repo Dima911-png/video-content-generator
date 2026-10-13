@@ -184,7 +184,7 @@ async def process_topic(
                 "short natural transitions, and a memorable conclusion. Avoid filler, repeated ideas, "
                 "fake facts, clickbait, and robotic phrasing. Visual direction: bright, clean, modern, "
                 "professional documentary look; varied relevant visuals; avoid dark gloomy grading. "
-                + (getattr(topic_entry, "notes", "") or \"\")
+                + (getattr(topic_entry, "notes", "") or "")
             ),
             include_ssml=True,
             generate_voice=not skip_voice,
