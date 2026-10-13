@@ -31,7 +31,7 @@ from src.services.script_service import ScriptService
 from src.services.voice_service import VoiceService
 from src.services.video_service import VideoConfig
 from src.providers.scripts.openai_provider import OpenAIScriptProvider
-from src.providers.voice.elevenlabs_provider import ElevenLabsVoiceProvider
+from src.providers.voice.edge_tts_provider import EdgeTTSVoiceProvider
 from src.models.schemas import ProviderConfig
 from src.utils.output_manager import OutputManager
 
@@ -64,11 +64,12 @@ def create_orchestrator(api_keys: dict) -> ContentOrchestrator:
     script_provider = OpenAIScriptProvider(config=script_config)
     
     voice_config = ProviderConfig(
-        provider_type="elevenlabs",
-        api_key=api_keys["elevenlabs"],
+        provider_type="edge_tts",
+        api_key=None,
         timeout=120,
+        extra_params={"voice": "ru-RU-SvetlanaNeural"},
     )
-    voice_provider = ElevenLabsVoiceProvider(config=voice_config)
+    voice_provider = EdgeTTSVoiceProvider(config=voice_config)
     
     # Initialize services
     script_service = ScriptService(provider=script_provider)
