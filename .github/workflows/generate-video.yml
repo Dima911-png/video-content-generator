@@ -78,9 +78,9 @@ jobs:
         run: |
           python - <<'PY'
           import os, sys
-          missing = [name for name in ("OPENAI_API_KEY", "ELEVENLABS_API_KEY") if not os.getenv(name)]
+          missing = [name for name in ("OPENAI_API_KEY",) if not os.getenv(name)]
           if missing:
-              print("Missing GitHub Actions secrets: " + ", ".join(missing))
+              print("Missing required GitHub Actions secret: " + ", ".join(missing))
               print("Add them in Settings > Secrets and variables > Actions.")
               sys.exit(1)
           print("Required API secrets are present.")
