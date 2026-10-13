@@ -41,7 +41,11 @@ class OpenAITTSVoiceProvider(IVoiceProvider):
     """OpenAI speech API; reuses OPENAI_API_KEY used for script generation."""
     def __init__(self, config):
         self.config = config
-        self.api_key = config.api_key
+        # Normalize accidental leading slash or wrapping quotes from GitHub Secrets.
+        raw_key = str(config.api_key or "").strip()
+        if len(raw_key) >= 2 and raw_key[0] == raw_key[-1] and raw_key[0] in ("'", '"'):
+            raw_key = raw_key[1:-1].strip()
+        self.api_key = raw_key.lstrip("\\").strip()
         self.api_url = (config.api_url or "https://api.openai.com/v1").rstrip("/")
         self.model = config.model_name or "gpt-4o-mini-tts"
         self.timeout = config.timeout
