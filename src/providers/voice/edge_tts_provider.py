@@ -9,14 +9,14 @@ from src.models.base_provider import ProviderStatus
 from src.models.voice_provider import IVoiceProvider, VoiceOptions, VoiceOutput, Voice
 
 def plain(text):
-    return re.sub(r"\\s+", " ", re.sub(r"<[^>]+>", " ", text)).strip()
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text)).strip()
 
 def chunks(text, limit=2400):
     text = plain(text)
     if not text:
         raise ValueError("Narration text is empty")
     parts, current = [], ""
-    for sentence in re.split(r"(?<=[.!?])\\s+", text):
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
         while len(sentence) > limit:
             if current:
                 parts.append(current)
@@ -38,7 +38,7 @@ class EdgeTTSVoiceProvider(IVoiceProvider):
     async def validate(self) -> bool:
         return True
     async def get_status(self) -> ProviderStatus:
-        return ProviderStatus(True, "edge-tts needs internet access")
+        return ProviderStatus(True, "edge-tts requires internet access")
     def get_capabilities(self) -> List[str]:
         return ["text_to_speech", "russian", "english"]
     def get_config(self) -> Dict[str, Any]:
@@ -51,7 +51,7 @@ class EdgeTTSVoiceProvider(IVoiceProvider):
         ]
     async def generate_voice(self, text: str, options: Optional[VoiceOptions] = None) -> VoiceOutput:
         options = options or VoiceOptions(language="ru")
-        voice = options.voice_id or ({"ru": "ru-RU-SvetlanaNeural", "en": "en-US-JennyNeural"}.get(options.language, "ru-RU-SvetlanaNeural"))
+        voice = options.voice_id or {"ru": "ru-RU-SvetlanaNeural", "en": "en-US-JennyNeural"}.get(options.language, "ru-RU-SvetlanaNeural")
         rate = "%+d%%" % max(-50, min(100, round((options.speed - 1.0) * 100)))
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
