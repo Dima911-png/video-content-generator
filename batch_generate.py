@@ -109,8 +109,10 @@ def create_orchestrator(api_keys: dict) -> ContentOrchestrator:
     video_config = VideoConfig()
     video_config.output_resolution = (1920, 1080)
     video_config.fps = 24
-    video_config.subtitle_font_size = 28
-    video_config.subtitle_bg_opacity = 0.6
+    video_config.subtitle_font = "DejaVu Sans"
+    video_config.subtitle_font_size = 32
+    video_config.subtitle_outline_width = 3
+    video_config.subtitle_bg_opacity = 0.35
     
     # Image API keys
     image_api_keys = {
@@ -163,7 +165,8 @@ async def process_topic(
     
     try:
         # Calculate target images based on duration (~3 per minute, each shown ~20s with Ken Burns)
-        target_images = max(10, int(topic_entry.target_duration_minutes * 3))
+        # Use enough distinct visuals to avoid obvious image repetition in long videos (~8 per minute).
+        target_images = max(40, int(topic_entry.target_duration_minutes * 8))
         
         # Generate content
         result = await orchestrator.generate_content(
