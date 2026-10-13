@@ -162,6 +162,7 @@ class ContentOrchestrator:
         target_total_images: int = 100,
         create_video: bool = True,
         target_duration_minutes: Optional[float] = None,
+        custom_instructions: str = "",
     ) -> Dict[str, Any]:
         """
         Generate complete content through the full workflow.
@@ -213,7 +214,7 @@ class ContentOrchestrator:
             workflow.update_stage(WorkflowStage.CONTENT_WRITING)
             logger.info("Stage 3/5: Writing content script...")
             script_response = await self._write_content(
-                workflow, tone, length, style, language, target_duration_minutes
+                workflow, tone, length, style, language, target_duration_minutes, custom_instructions
             )
             workflow.data["raw_script"] = script_response.script
             
@@ -409,6 +410,7 @@ class ContentOrchestrator:
         style: str,
         language: str,
         target_duration_minutes: Optional[float] = None,
+        custom_instructions: str = "",
     ) -> ScriptResponse:
         """
         Write the main content script.
@@ -436,6 +438,8 @@ class ContentOrchestrator:
             extra_params = {"research_context": research_context}
             if target_duration_minutes:
                 extra_params["target_duration_minutes"] = target_duration_minutes
+            if custom_instructions.strip():
+                extra_params["custom_instructions"] = custom_instructions.strip()
             
             script_request = ScriptRequest(
                 topic=workflow.topic,
