@@ -63,21 +63,42 @@ def create_orchestrator(api_keys: dict) -> ContentOrchestrator:
     )
     script_provider = OpenAIScriptProvider(config=script_config)
     
-    voice_config = ProviderConfig(
-        provider_type="openai_tts",
-        api_key=api_keys["openai"],
-        model_name="gpt-4o-mini-tts",
-        timeout=180,
-        extra_params={
-            "voice": os.getenv("OPENAI_TTS_VOICE", "marin"),
-            "instructions": (
-                "Speak in natural, fluent Russian like a professional educational YouTube narrator. "
-                "Use clear pronunciation, warm confident delivery, natural intonation and moderate pacing. "
-                "Avoid robotic monotony, exaggerated acting, and unnatural pauses."
-            ),
-        },
-    )
-    voice_provider = OpenAITTSVoiceProvider(config=voice_config)
+    # Prefer Russian TTS Studio VoxCPM2 when its server URL is configured.
+    # The URL must point to a running, reachable Russian TTS Studio server.
+    tts_studio_url = os.getenv("RUSSIAN_TTS_STUDIO_URL", "").strip()
+    if tts_studio_url:
+        from src.providers.voice.russian_tts_studio_provider import RussianTTSStudioVoiceProvider
+        voice_config = ProviderConfig(
+            provider_type="russian_tts_studio",
+            api_url=tts_studio_url,
+            model_name=os.getenv("RUSSIAN_TTS_ENGINE", "voxcpm"),
+            timeout=int(os.getenv("RUSSIAN_TTS_TIMEOUT", "600")),
+            extra_params={
+                "instruct": (
+                    "Russian educational YouTube narration. Natural conversational delivery, "
+                    "warm confident adult voice, expressive but restrained intonation, clear "
+                    "pronunciation, medium pace, and natural pauses. Avoid robotic delivery."
+                ),
+            },
+        )
+        voice_provider = RussianTTSStudioVoiceProvider(config=voice_config)
+        logger.info("Voice engine: Russian TTS Studio (%s)", os.getenv("RUSSIAN_TTS_ENGINE", "voxcpm"))
+    else:
+        voice_config = ProviderConfig(
+            provider_type="openai_tts",
+            api_key=api_keys["openai"],
+            model_name="gpt-4o-mini-tts",
+            timeout=180,
+            extra_params={
+                "voice": os.getenv("OPENAI_TTS_VOICE", "marin"),
+                "instructions": (
+                    "Speak in natural, fluent Russian like a professional educational YouTube narrator. "
+                    "Use clear pronunciation, warm confident delivery, natural intonation and moderate pacing. "
+                    "Avoid robotic monotony, exaggerated acting, and unnatural pauses."
+                ),
+            },
+        )
+        voice_provider = OpenAITTSVoiceProvider(config=voice_config)
     
     # Initialize services
     script_service = ScriptService(provider=script_provider)
