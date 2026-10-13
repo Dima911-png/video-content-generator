@@ -178,6 +178,14 @@ async def process_topic(
             # Generate with a 20% buffer because model word counts and speaking pace vary;
             # this helps the final narration meet the requested minimum duration.
             target_duration_minutes=round(topic_entry.target_duration_minutes * 1.2, 2),
+            custom_instructions=(
+                "Create a polished, high-retention Russian educational YouTube video. "
+                "Use a strong opening hook, clear chapter-like progression, concrete examples, "
+                "short natural transitions, and a memorable conclusion. Avoid filler, repeated ideas, "
+                "fake facts, clickbait, and robotic phrasing. Visual direction: bright, clean, modern, "
+                "professional documentary look; varied relevant visuals; avoid dark gloomy grading. "
+                + (getattr(topic_entry, \"notes\", \"\") or \"\")
+            ),
             include_ssml=True,
             generate_voice=not skip_voice,
             find_images=not skip_images,
