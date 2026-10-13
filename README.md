@@ -293,3 +293,25 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [OpenAI](https://openai.com/) for GPT-4
 - [ElevenLabs](https://elevenlabs.io/) for voice synthesis
 - [FFmpeg](https://ffmpeg.org/) for video processing
+
+
+## 📱 One-click generation from an iPhone (GitHub Actions)
+
+This fork includes a manual workflow at **Actions → Generate educational video → Run workflow**.
+Choose a topic and duration (10, 12, or 15 minutes). The workflow runs on GitHub's hosted Linux runner and uploads an `educational-video` artifact containing the MP4 and logs.
+
+### One-time setup
+
+1. Open **Settings → Secrets and variables → Actions → New repository secret**.
+2. Add `OPENAI_API_KEY` (required; create it at https://platform.openai.com/api-keys).
+3. Add `ELEVENLABS_API_KEY` (required; create it at https://elevenlabs.io/).
+4. Optional: add `PEXELS_API_KEY` and/or `PIXABAY_API_KEY` to improve image search.
+5. Open the **Actions** tab and enable workflows for this fork if GitHub asks.
+
+Never put API keys in source files, CSV files, or workflow inputs. API usage may incur charges depending on your provider plans and quotas.
+
+### Downloading the result on iPhone
+
+When the run finishes successfully, open the run in **Actions**, scroll to **Artifacts**, tap `educational-video`, and download the ZIP. In Safari's Downloads, open the ZIP to extract it and find `output/<video-topic>/video.mp4`.
+
+The pipeline uses narrated still images with pan/zoom motion and styled subtitles; it does not generate continuous AI video footage. The current project does not add background music automatically. The workflow checks that the MP4 is readable and meets the selected minimum duration, but external API limits, image-source availability, and generated content can still cause a run to fail.
