@@ -43,6 +43,10 @@ jobs:
           import os, requests
           from pathlib import Path
           key = os.environ.get("OPENAI_API_KEY", "").strip()
+          # Normalize accidental leading slash or wrapping quotes in the GitHub secret.
+          if len(key) >= 2 and key[0] == key[-1] and key[0] in ("'", '"'):
+              key = key[1:-1].strip()
+          key = key.lstrip("\\").strip()
           text = os.environ.get("SAMPLE_TEXT", "").strip()
           voice = os.environ["VOICE"]
           if not key:
