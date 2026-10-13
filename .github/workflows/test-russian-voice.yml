@@ -13,9 +13,11 @@ on:
         required: true
         type: choice
         options:
-          - ru-RU-SvetlanaNeural
-          - ru-RU-DmitryNeural
-        default: ru-RU-SvetlanaNeural
+          - marin
+          - cedar
+          - coral
+          - nova
+        default: marin
 
 permissions:
   contents: read
@@ -30,29 +32,45 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install voice engine
-        run: python -m pip install --upgrade pip edge-tts
+        run: python -m pip install --upgrade pip requests
       - name: Generate short preview
         env:
-          SAMPLE_TEXT: ${{ inputs.sample_text }}
-          VOICE: ${{ inputs.voice }}
+          OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
+          SAMPLE_TEXT: \${{ inputs.sample_text }}
+          VOICE: \${{ inputs.voice }}
         run: |
           python - <<'PY'
-          import asyncio, os
+          import os, requests
           from pathlib import Path
-          import edge_tts
+          key = os.environ.get("OPENAI_API_KEY", "").strip()
           text = os.environ.get("SAMPLE_TEXT", "").strip()
           voice = os.environ["VOICE"]
+          if not key:
+              raise SystemExit("Missing OPENAI_API_KEY secret. Add it in Settings > Secrets and variables > Actions.")
           if not text:
               raise SystemExit("Please enter a short sample text.")
           if len(text) > 1800:
               raise SystemExit("For a quick preview, keep the sample under 1800 characters.")
-          async def main():
-              target = Path("voice-preview.mp3")
-              await edge_tts.Communicate(text, voice, rate="-5%").save(str(target))
-              if not target.exists() or target.stat().st_size < 1000:
-                  raise SystemExit("Preview audio was not generated correctly.")
-              print(f"Preview created: {target.stat().st_size} bytes, voice={voice}")
-          asyncio.run(main())
+          payload = {
+              "model": "gpt-4o-mini-tts",
+              "voice": voice,
+              "input": text,
+              "instructions": "Speak in natural, fluent Russian like a professional educational YouTube narrator. Use clear pronunciation, warm confident delivery, natural intonation and moderate pacing. Avoid robotic monotony, exaggerated acting, and unnatural pauses.",
+              "response_format": "mp3",
+              "speed": 0.95,
+          }
+          response = requests.post("https://api.openai.com/v1/audio/speech", headers={"Authorization": "Bearer " + key}, json=payload, timeout=120)
+          if response.status_code != 200:
+              try:
+                  detail = response.json().get("error", {}).get("message", response.text[:600])
+              except Exception:
+                  detail = response.text[:600]
+              raise SystemExit("OpenAI speech API failed (HTTP %s): %s" % (response.status_code, detail))
+          target = Path("voice-preview.mp3")
+          target.write_bytes(response.content)
+          if target.stat().st_size < 1000 or not (response.content.startswith(b"ID3") or response.content.startswith(bytes([255]))):
+              raise SystemExit("Speech API returned an empty or invalid MP3.")
+          print("Preview created: %s bytes, voice=%s" % (target.stat().st_size, voice))
           PY
       - name: Upload voice preview
         uses: actions/upload-artifact@v4
