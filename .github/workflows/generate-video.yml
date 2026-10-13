@@ -71,6 +71,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: Compile Python sources
+        run: python -m compileall -q src batch_generate.py
+
       - name: Check required API secrets
         run: |
           python - <<'PY'
@@ -119,6 +122,8 @@ jobs:
 
       - name: Verify generated MP4
         if: always()
+        env:
+          VIDEO_DURATION: ${{ inputs.duration }}
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -140,10 +145,13 @@ jobs:
                   duration = 0
               size = video.stat().st_size
               print(f"{video}: duration={duration/60:.2f} min, size={size/1024/1024:.1f} MB")
-              if probe.returncode == 0 and duration > 0 and size > 100_000:
+              minimum_seconds = float(__import__("os").environ.get("VIDEO_DURATION", "10")) * 60 - 15
+              if probe.returncode == 0 and duration >= minimum_seconds and size > 100_000:
                   valid.append(video)
+              else:
+                  print(f"Rejected: expected at least {minimum_seconds/60:.2f} minutes and a readable non-empty MP4.")
           if not valid:
-              print("MP4 validation failed: file is missing, empty, or unreadable.")
+              print("MP4 validation failed: no readable video met the requested minimum duration.")
               sys.exit(1)
           PY
 
