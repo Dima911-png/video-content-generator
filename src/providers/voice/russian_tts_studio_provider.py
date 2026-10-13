@@ -18,18 +18,18 @@ from src.models.voice_provider import IVoiceProvider, VoiceOptions, VoiceOutput,
 
 
 def _plain(text: str) -> str:
-    text = re.sub(r"<break\\b[^>]*/>", ". ", text, flags=re.I)
+    text = re.sub(r"<break\b[^>]*/>", ". ", text, flags=re.I)
     text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"\\[(?:Citation|Source)\\]", "", text, flags=re.I)
-    text = re.sub(r"\\[\\d+\\]", "", text)
-    return re.sub(r"\\s+", " ", text).strip()
+    text = re.sub(r"\[(?:Citation|Source)\]", "", text, flags=re.I)
+    text = re.sub(r"\[\d+\]", "", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _chunks(text: str, limit: int = 1800) -> List[str]:
     text = _plain(text)
     if not text:
         raise ValueError("Narration text is empty.")
-    sentences = re.split(r"(?<=[.!?。！？])\\s+", text)
+    sentences = re.split(r"(?<=[.!?。！？])\s+", text)
     parts, current = [], ""
     for sentence in sentences:
         while len(sentence) > limit:
@@ -151,7 +151,7 @@ class RussianTTSStudioVoiceProvider(IVoiceProvider):
                 merged = files[0].read_bytes()
             else:
                 listing = root / "concat.txt"
-                listing.write_text("".join(f"file '{p.as_posix()}'\\n" for p in files), encoding="utf-8")
+                listing.write_text("".join(f"file '{p.as_posix()}'\n" for p in files), encoding="utf-8")
                 output = root / "narration.mp3"
                 proc = await asyncio.create_subprocess_exec(
                     "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
