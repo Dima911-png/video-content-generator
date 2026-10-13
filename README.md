@@ -304,7 +304,7 @@ Choose a topic and duration (10, 12, or 15 minutes). The workflow runs on GitHub
 
 1. Open **Settings → Secrets and variables → Actions → New repository secret**.
 2. Add `OPENAI_API_KEY` (required for script generation; create it at https://platform.openai.com/api-keys).
-3. No ElevenLabs key is needed; narration uses Microsoft Edge neural TTS via `edge-tts`.
+3. No ElevenLabs key is needed; narration uses OpenAI's neural speech API with the same `OPENAI_API_KEY` secret.
 4. Optional: add `PEXELS_API_KEY` and/or `PIXABAY_API_KEY` to improve image search.
 5. Open the **Actions** tab and enable workflows for this fork if GitHub asks.
 
@@ -315,3 +315,7 @@ Never put API keys in source files, CSV files, or workflow inputs. API usage may
 When the run finishes successfully, open the run in **Actions**, scroll to **Artifacts**, tap `educational-video`, and download the ZIP. In Safari's Downloads, open the ZIP to extract it and find `output/<video-topic>/video.mp4`.
 
 The pipeline uses narrated still images with pan/zoom motion and styled subtitles; it does not generate continuous AI video footage. The current project does not add background music automatically. The workflow checks that the MP4 is readable and meets the selected minimum duration, but external API limits, image-source availability, and generated content can still cause a run to fail.
+
+
+### Voice preview
+Use **Actions → Test Russian voice → Run workflow** to generate a short MP3 preview. This uses the `OPENAI_API_KEY` secret already required for script generation. OpenAI API usage and billing limits apply. The preview uses OpenAI's `gpt-4o-mini-tts` model and natural-delivery instructions.
