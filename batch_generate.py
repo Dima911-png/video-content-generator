@@ -31,7 +31,7 @@ from src.services.script_service import ScriptService
 from src.services.voice_service import VoiceService
 from src.services.video_service import VideoConfig
 from src.providers.scripts.openai_provider import OpenAIScriptProvider
-from src.providers.voice.edge_tts_provider import EdgeTTSVoiceProvider
+from src.providers.voice.openai_tts_provider import OpenAITTSVoiceProvider
 from src.models.schemas import ProviderConfig
 from src.utils.output_manager import OutputManager
 
@@ -64,12 +64,20 @@ def create_orchestrator(api_keys: dict) -> ContentOrchestrator:
     script_provider = OpenAIScriptProvider(config=script_config)
     
     voice_config = ProviderConfig(
-        provider_type="edge_tts",
-        api_key=None,
-        timeout=120,
-        extra_params={"voice": "ru-RU-SvetlanaNeural"},
+        provider_type="openai_tts",
+        api_key=api_keys["openai"],
+        model_name="gpt-4o-mini-tts",
+        timeout=180,
+        extra_params={
+            "voice": os.getenv("OPENAI_TTS_VOICE", "marin"),
+            "instructions": (
+                "Speak in natural, fluent Russian like a professional educational YouTube narrator. "
+                "Use clear pronunciation, warm confident delivery, natural intonation and moderate pacing. "
+                "Avoid robotic monotony, exaggerated acting, and unnatural pauses."
+            ),
+        },
     )
-    voice_provider = EdgeTTSVoiceProvider(config=voice_config)
+    voice_provider = OpenAITTSVoiceProvider(config=voice_config)
     
     # Initialize services
     script_service = ScriptService(provider=script_provider)
