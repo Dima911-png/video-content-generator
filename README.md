@@ -303,8 +303,8 @@ Choose a topic and duration (10, 12, or 15 minutes). The workflow runs on GitHub
 ### One-time setup
 
 1. Open **Settings → Secrets and variables → Actions → New repository secret**.
-2. Add `OPENAI_API_KEY` (required; create it at https://platform.openai.com/api-keys).
-3. Add `ELEVENLABS_API_KEY` (required; create it at https://elevenlabs.io/).
+2. Add `OPENAI_API_KEY` (required for script generation; create it at https://platform.openai.com/api-keys).
+3. No ElevenLabs key is needed; narration uses Microsoft Edge neural TTS via `edge-tts`.
 4. Optional: add `PEXELS_API_KEY` and/or `PIXABAY_API_KEY` to improve image search.
 5. Open the **Actions** tab and enable workflows for this fork if GitHub asks.
 
