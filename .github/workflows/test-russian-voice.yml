@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install voice engine
-        run: python -m pip install --upgrade pip requests
+        run: python -m pip install --upgrade pip requests gTTS
       - name: Generate short preview
         env:
           OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
@@ -64,17 +64,26 @@ jobs:
               "speed": 0.95,
           }
           response = requests.post("https://api.openai.com/v1/audio/speech", headers={"Authorization": "Bearer " + key}, json=payload, timeout=120)
-          if response.status_code != 200:
+          target = Path("voice-preview.mp3")
+          if response.status_code == 200:
+              target.write_bytes(response.content)
+              if target.stat().st_size < 1000 or not (response.content.startswith(b"ID3") or response.content.startswith(bytes([255]))):
+                  raise SystemExit("OpenAI returned an empty or invalid MP3.")
+              print("Preview created with OpenAI neural voice: %s bytes, voice=%s" % (target.stat().st_size, voice))
+          else:
               try:
                   detail = response.json().get("error", {}).get("message", response.text[:600])
               except Exception:
                   detail = response.text[:600]
-              raise SystemExit("OpenAI speech API failed (HTTP %s): %s" % (response.status_code, detail))
-          target = Path("voice-preview.mp3")
-          target.write_bytes(response.content)
-          if target.stat().st_size < 1000 or not (response.content.startswith(b"ID3") or response.content.startswith(bytes([255]))):
-              raise SystemExit("Speech API returned an empty or invalid MP3.")
-          print("Preview created: %s bytes, voice=%s" % (target.stat().st_size, voice))
+              if response.status_code == 429 and ("no credits" in detail.lower() or "quota" in detail.lower() or "billing" in detail.lower()):
+                  print("OpenAI API has no credits. Falling back to free Google Translate TTS for a basic demo voice.")
+                  from gtts import gTTS
+                  gTTS(text=text, lang="ru", slow=False).save(str(target))
+                  if not target.exists() or target.stat().st_size < 1000:
+                      raise SystemExit("Free fallback TTS returned an empty MP3.")
+                  print("Preview created with free fallback voice (not OpenAI): %s bytes" % target.stat().st_size)
+              else:
+                  raise SystemExit("OpenAI speech API failed (HTTP %s): %s" % (response.status_code, detail))
           PY
       - name: Upload voice preview
         uses: actions/upload-artifact@v4
