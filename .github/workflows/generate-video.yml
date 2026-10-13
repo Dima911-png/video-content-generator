@@ -44,6 +44,9 @@ jobs:
     timeout-minutes: 90
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      RUSSIAN_TTS_STUDIO_URL: ${{ secrets.RUSSIAN_TTS_STUDIO_URL }}
+      RUSSIAN_TTS_ENGINE: voxcpm
+      RUSSIAN_TTS_TIMEOUT: "600"
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
       PYTHONUTF8: "1"
