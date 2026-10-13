@@ -1,4 +1,4 @@
-name: Test Russian voice
+name: Test Russian voice — Russian TTS Studio
 
 on:
   workflow_dispatch:
@@ -7,87 +7,85 @@ on:
         description: "Текст для проверки голоса (короткий отрывок)"
         required: true
         type: string
-        default: "Привет! Сегодня мы разберём удивительную историю, которая изменила наш мир. Вы узнаете неожиданные факты, поймёте, почему это произошло, и какие выводы можно сделать."
-      voice:
-        description: "Голос для проверки"
-        required: true
-        type: choice
-        options:
-          - marin
-          - cedar
-          - coral
-          - nova
-        default: marin
-
+        default: "Привет! Сегодня мы разберём удивительную историю, которая изменила наш мир. Вы узнаете неожиданные факты и поймёте, почему это произошло."
 permissions:
   contents: read
 
 jobs:
   voice-preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+    env:
+      RUSSIAN_TTS_STUDIO_URL: ${{ secrets.RUSSIAN_TTS_STUDIO_URL }}
+      SAMPLE_TEXT: ${{ inputs.sample_text }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install voice engine
-        run: python -m pip install --upgrade pip requests gTTS
-      - name: Generate short preview
-        env:
-          OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
-          SAMPLE_TEXT: \${{ inputs.sample_text }}
-          VOICE: \${{ inputs.voice }}
+      - name: Install FFmpeg and requests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip requests
+      - name: Generate preview with VoxCPM2
         run: |
           python - <<'PY'
-          import os, requests
+          import os, sys, requests
           from pathlib import Path
-          key = os.environ.get("OPENAI_API_KEY", "").strip()
-          # Normalize accidental leading slash or wrapping quotes in the GitHub secret.
-          if len(key) >= 2 and key[0] == key[-1] and key[0] in ("'", '"'):
-              key = key[1:-1].strip()
-          key = key.lstrip("\\").strip()
+          base = os.environ.get("RUSSIAN_TTS_STUDIO_URL", "").strip().rstrip("/")
           text = os.environ.get("SAMPLE_TEXT", "").strip()
-          voice = os.environ["VOICE"]
-          if not key:
-              raise SystemExit("Missing OPENAI_API_KEY secret. Add it in Settings > Secrets and variables > Actions.")
+          if not base.startswith(("https://", "http://")):
+              raise SystemExit("Missing RUSSIAN_TTS_STUDIO_URL secret. It must be the base URL of a running Russian TTS Studio server.")
           if not text:
               raise SystemExit("Please enter a short sample text.")
           if len(text) > 1800:
               raise SystemExit("For a quick preview, keep the sample under 1800 characters.")
-          payload = {
-              "model": "gpt-4o-mini-tts",
-              "voice": voice,
-              "input": text,
-              "instructions": "Speak in natural, fluent Russian like a professional educational YouTube narrator. Use clear pronunciation, warm confident delivery, natural intonation and moderate pacing. Avoid robotic monotony, exaggerated acting, and unnatural pauses.",
-              "response_format": "mp3",
-              "speed": 0.95,
-          }
-          response = requests.post("https://api.openai.com/v1/audio/speech", headers={"Authorization": "Bearer " + key}, json=payload, timeout=120)
-          target = Path("voice-preview.mp3")
-          if response.status_code == 200:
-              target.write_bytes(response.content)
-              if target.stat().st_size < 1000 or not (response.content.startswith(b"ID3") or response.content.startswith(bytes([255]))):
-                  raise SystemExit("OpenAI returned an empty or invalid MP3.")
-              print("Preview created with OpenAI neural voice: %s bytes, voice=%s" % (target.stat().st_size, voice))
-          else:
-              try:
-                  detail = response.json().get("error", {}).get("message", response.text[:600])
-              except Exception:
-                  detail = response.text[:600]
-              if response.status_code == 429 and ("no credits" in detail.lower() or "quota" in detail.lower() or "billing" in detail.lower()):
-                  print("OpenAI API has no credits. Falling back to free Google Translate TTS for a basic demo voice.")
-                  from gtts import gTTS
-                  gTTS(text=text, lang="ru", slow=False).save(str(target))
-                  if not target.exists() or target.stat().st_size < 1000:
-                      raise SystemExit("Free fallback TTS returned an empty MP3.")
-                  print("Preview created with free fallback voice (not OpenAI): %s bytes" % target.stat().st_size)
-              else:
-                  raise SystemExit("OpenAI speech API failed (HTTP %s): %s" % (response.status_code, detail))
+          response = requests.post(
+              base + "/api/synthesize",
+              data={
+                  "text": text,
+                  "engine": "voxcpm",
+                  "instruct": "Natural Russian educational narrator, warm adult voice, expressive but restrained intonation, clear pronunciation, natural pauses.",
+                  "enable_fallback": "false",
+                  "enable_postprocess": "true",
+                  "enable_quality_check": "false",
+                  "enable_prosody": "true",
+                  "pause_ms_comma": "140",
+                  "pause_ms_period": "300",
+                  "pause_ms_question": "320",
+                  "pause_ms_exclamation": "320",
+              },
+              timeout=900,
+          )
+          response.raise_for_status()
+          data = response.json()
+          audio_url = data.get("audio_url")
+          if not audio_url:
+              raise SystemExit("TTS Studio response has no audio_url: " + str(data)[:1000])
+          if not audio_url.startswith(("https://", "http://")):
+              audio_url = base + "/" + audio_url.lstrip("/")
+          audio = requests.get(audio_url, timeout=180)
+          audio.raise_for_status()
+          wav = Path("voice-preview.wav")
+          wav.write_bytes(audio.content)
+          if wav.stat().st_size < 1000:
+              raise SystemExit("Russian TTS Studio returned an empty audio file.")
+          import subprocess
+          result = subprocess.run(
+              ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(wav),
+               "-c:a", "libmp3lame", "-q:a", "2", "voice-preview.mp3"],
+              capture_output=True, text=True
+          )
+          if result.returncode:
+              raise SystemExit("MP3 conversion failed: " + result.stderr[-1000:])
+          print("VoxCPM2 preview created:", Path("voice-preview.mp3").stat().st_size, "bytes")
           PY
       - name: Upload voice preview
         uses: actions/upload-artifact@v4
         with:
-          name: russian-voice-preview
-          path: voice-preview.mp3
+          name: russian-tts-studio-preview
+          path: |
+            voice-preview.mp3
+            voice-preview.wav
           retention-days: 3
