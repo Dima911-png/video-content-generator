@@ -123,38 +123,46 @@ jobs:
       - name: Generate video
         run: python batch_generate.py --all --language ru
 
-      - name: Verify generated MP4
+      - name: Verify generated MP4 quality
         if: always()
         env:
           VIDEO_DURATION: ${{ inputs.duration }}
         run: |
           python - <<'PY'
           from pathlib import Path
-          import subprocess, sys
+          import json, os, subprocess, sys
           videos = list(Path("output").glob("**/video.mp4")) if Path("output").exists() else []
           if not videos:
               print("No output/video.mp4 was generated.")
               sys.exit(1)
           valid = []
+          minimum_seconds = float(os.environ.get("VIDEO_DURATION", "10")) * 60 - 15
           for video in videos:
               probe = subprocess.run(
-                  ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                   "-of", "default=noprint_wrappers=1:nokey=1", str(video)],
+                  ["ffprobe", "-v", "error", "-show_entries",
+                   "format=duration:stream=codec_type,width,height",
+                   "-of", "json", str(video)],
                   capture_output=True, text=True
               )
               try:
-                  duration = float(probe.stdout.strip())
-              except (ValueError, TypeError):
-                  duration = 0
+                  data = json.loads(probe.stdout)
+                  duration = float(data.get("format", {}).get("duration", 0))
+                  streams = data.get("streams", [])
+              except (ValueError, TypeError, json.JSONDecodeError):
+                  duration, streams = 0, []
+              video_streams = [s for s in streams if s.get("codec_type") == "video"]
+              audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
+              width = int(video_streams[0].get("width", 0)) if video_streams else 0
+              height = int(video_streams[0].get("height", 0)) if video_streams else 0
               size = video.stat().st_size
-              print(f"{video}: duration={duration/60:.2f} min, size={size/1024/1024:.1f} MB")
-              minimum_seconds = float(__import__("os").environ.get("VIDEO_DURATION", "10")) * 60 - 15
-              if probe.returncode == 0 and duration >= minimum_seconds and size > 100_000:
+              print(f"{video}: duration={duration/60:.2f} min, resolution={width}x{height}, audio={bool(audio_streams)}, size={size/1024/1024:.1f} MB")
+              if (probe.returncode == 0 and duration >= minimum_seconds and
+                  width >= 1920 and height >= 1080 and audio_streams and size > 100_000):
                   valid.append(video)
               else:
-                  print(f"Rejected: expected at least {minimum_seconds/60:.2f} minutes and a readable non-empty MP4.")
+                  print("Rejected: expected requested duration, 1920x1080 or better, an audio stream, and a readable non-empty MP4.")
           if not valid:
-              print("MP4 validation failed: no readable video met the requested minimum duration.")
+              print("Video quality gate failed.")
               sys.exit(1)
           PY
 
