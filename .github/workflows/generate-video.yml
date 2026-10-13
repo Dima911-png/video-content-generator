@@ -1,0 +1,159 @@
+name: Generate educational video
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Тема нового видео"
+        required: true
+        type: string
+      duration:
+        description: "Минимальная целевая длительность (минуты)"
+        required: true
+        type: choice
+        options:
+          - "10"
+          - "12"
+          - "15"
+        default: "10"
+      tone:
+        description: "Стиль подачи"
+        required: true
+        type: choice
+        options:
+          - informative
+          - educational
+          - curious
+        default: informative
+      notes:
+        description: "Дополнительные пожелания (необязательно)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: video-generation
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PYTHONUTF8: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install FFmpeg and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          ffmpeg -version
+          ffprobe -version
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Check required API secrets
+        run: |
+          python - <<'PY'
+          import os, sys
+          missing = [name for name in ("OPENAI_API_KEY", "ELEVENLABS_API_KEY") if not os.getenv(name)]
+          if missing:
+              print("Missing GitHub Actions secrets: " + ", ".join(missing))
+              print("Add them in Settings > Secrets and variables > Actions.")
+              sys.exit(1)
+          print("Required API secrets are present.")
+          PY
+
+      - name: Prepare one-video queue
+        env:
+          VIDEO_TOPIC: ${{ inputs.topic }}
+          VIDEO_DURATION: ${{ inputs.duration }}
+          VIDEO_TONE: ${{ inputs.tone }}
+          VIDEO_NOTES: ${{ inputs.notes }}
+        run: |
+          python - <<'PY'
+          import csv, os
+          fields = [
+              "topic", "target_duration_minutes", "status", "priority", "tone", "style",
+              "notes", "actual_duration_minutes", "word_count", "output_path", "completed_at", "error_message"
+          ]
+          topic = os.environ["VIDEO_TOPIC"].strip()
+          if not topic:
+              raise SystemExit("Video topic cannot be empty.")
+          with open("topics.csv", "w", newline="", encoding="utf-8") as f:
+              writer = csv.DictWriter(f, fieldnames=fields)
+              writer.writeheader()
+              writer.writerow({
+                  "topic": topic,
+                  "target_duration_minutes": float(os.environ["VIDEO_DURATION"]),
+                  "status": "pending",
+                  "priority": 1,
+                  "tone": os.environ["VIDEO_TONE"],
+                  "style": "educational",
+                  "notes": os.environ.get("VIDEO_NOTES", "").strip(),
+              })
+          print(f"Queued one Russian-language video: {topic}")
+          PY
+
+      - name: Generate video
+        run: python batch_generate.py --all --language ru
+
+      - name: Verify generated MP4
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, sys
+          videos = list(Path("output").glob("**/video.mp4")) if Path("output").exists() else []
+          if not videos:
+              print("No output/video.mp4 was generated.")
+              sys.exit(1)
+          valid = []
+          for video in videos:
+              probe = subprocess.run(
+                  ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                   "-of", "default=noprint_wrappers=1:nokey=1", str(video)],
+                  capture_output=True, text=True
+              )
+              try:
+                  duration = float(probe.stdout.strip())
+              except (ValueError, TypeError):
+                  duration = 0
+              size = video.stat().st_size
+              print(f"{video}: duration={duration/60:.2f} min, size={size/1024/1024:.1f} MB")
+              if probe.returncode == 0 and duration > 0 and size > 100_000:
+                  valid.append(video)
+          if not valid:
+              print("MP4 validation failed: file is missing, empty, or unreadable.")
+              sys.exit(1)
+          PY
+
+      - name: Upload video and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: educational-video
+          path: |
+            output/
+            topics.csv
+          if-no-files-found: warn
+          retention-days: 7
